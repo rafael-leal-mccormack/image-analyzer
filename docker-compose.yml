@@ -1,0 +1,22 @@
+services:
+  analyzer:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MAX_FILE_SIZE_MB: 10
+      DETECTION_CONFIDENCE_THRESHOLD: 0.5
+      BAG_CONFIDENCE_THRESHOLD: 0.4
+      LOG_LEVEL: log
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
