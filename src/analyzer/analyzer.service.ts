@@ -10,7 +10,8 @@ const RECEIPT_CLASS = 'receipts';
 
 @Injectable()
 export class AnalyzerService {
-  private readonly scoreThreshold: number;
+  private readonly bagThreshold: number;
+  private readonly receiptThreshold: number;
 
   constructor(
     private readonly preprocessor: ImagePreprocessorService,
@@ -18,7 +19,8 @@ export class AnalyzerService {
     configService: ConfigService,
   ) {
     const config = configService.get<AppConfig>('app');
-    this.scoreThreshold = config?.bagConfidenceThreshold ?? 0.4;
+    this.bagThreshold = config?.bagConfidenceThreshold ?? 0.25;
+    this.receiptThreshold = config?.receiptConfidenceThreshold ?? 0.25;
   }
 
   async analyze(rawBuffer: Buffer): Promise<DetectionResult> {
@@ -27,10 +29,17 @@ export class AnalyzerService {
       this.preprocessor.computeBlurScore(rawBuffer),
     ]);
 
-    const detections = await this.detector.detect(buffer, this.scoreThreshold);
+    // Use the lower of the two thresholds so the detector surfaces all candidates;
+    // we apply per-class thresholds ourselves below.
+    const detectionThreshold = Math.min(this.bagThreshold, this.receiptThreshold);
+    const detections = await this.detector.detect(buffer, detectionThreshold);
 
-    const bags = detections.filter((d) => BAG_CLASSES.has(d.class));
-    const receipts = detections.filter((d) => d.class === RECEIPT_CLASS);
+    const bags = detections.filter(
+      (d) => BAG_CLASSES.has(d.class) && d.score >= this.bagThreshold,
+    );
+    const receipts = detections.filter(
+      (d) => d.class === RECEIPT_CLASS && d.score >= this.receiptThreshold,
+    );
 
     const bagScore = parseFloat(
       bags.reduce((max, d) => Math.max(max, d.score), 0).toFixed(4),
