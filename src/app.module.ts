@@ -9,13 +9,10 @@ import { AppController } from './app.controller';
 @Module({
   imports: [
     AppConfigModule,
-    ThrottlerModule.forRoot([
-      {
-        name: 'default',
-        ttl: 60_000,
-        limit: 30,
-      },
-    ]),
+    ThrottlerModule.forRoot({
+      throttlers: [{ name: 'default', ttl: 60_000, limit: 120 }],
+      skipIf: () => process.env.NODE_ENV !== 'production',
+    }),
     MlModule,
     AnalyzerModule,
   ],

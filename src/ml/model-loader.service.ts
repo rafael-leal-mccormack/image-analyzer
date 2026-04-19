@@ -1,59 +1,15 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import * as tf from '@tensorflow/tfjs';
-import '@tensorflow/tfjs-backend-cpu';
-import * as fs from 'fs';
+import * as tf from '@tensorflow/tfjs-node';
 import * as path from 'path';
 
-const MODEL_DIR = path.resolve(
+const MODEL_PATH = path.resolve(
   __dirname,
   '..',
   '..',
   'models',
   'bag_detection',
+  'model.json',
 );
-
-function buildFileIOHandler(modelDir: string): tf.io.IOHandler {
-  return {
-    load: async (): Promise<tf.io.ModelArtifacts> => {
-      const modelJsonPath = path.join(modelDir, 'model.json');
-      const modelJson = JSON.parse(fs.readFileSync(modelJsonPath, 'utf-8'));
-
-      const weightsManifest: tf.io.WeightsManifestConfig =
-        modelJson.weightsManifest ?? [];
-
-      const weightBuffers: ArrayBuffer[] = [];
-      for (const group of weightsManifest) {
-        for (const shardPath of group.paths) {
-          const buf = fs.readFileSync(path.join(modelDir, shardPath));
-          weightBuffers.push(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
-        }
-      }
-
-      return {
-        modelTopology: modelJson.modelTopology,
-        weightSpecs: weightsManifest.flatMap((g) => g.weights),
-        weightData: weightBuffers.length === 1
-          ? weightBuffers[0]
-          : concatenateArrayBuffers(weightBuffers),
-        format: modelJson.format,
-        generatedBy: modelJson.generatedBy,
-        convertedBy: modelJson.convertedBy,
-        signature: modelJson.signature,
-      };
-    },
-  };
-}
-
-function concatenateArrayBuffers(buffers: ArrayBuffer[]): ArrayBuffer {
-  const totalLength = buffers.reduce((sum, b) => sum + b.byteLength, 0);
-  const result = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const buf of buffers) {
-    result.set(new Uint8Array(buf), offset);
-    offset += buf.byteLength;
-  }
-  return result.buffer;
-}
 
 @Injectable()
 export class ModelLoaderService implements OnModuleInit {
@@ -62,8 +18,6 @@ export class ModelLoaderService implements OnModuleInit {
   private ready = false;
 
   async onModuleInit(): Promise<void> {
-    tf.enableProdMode();
-    await tf.ready();
     await this.loadWithRetry(3);
   }
 
@@ -73,7 +27,7 @@ export class ModelLoaderService implements OnModuleInit {
         this.logger.log(
           `Loading bag detection model (attempt ${attempt}/${maxAttempts})...`,
         );
-        this.model = await tf.loadGraphModel(buildFileIOHandler(MODEL_DIR));
+        this.model = await tf.loadGraphModel(`file://${MODEL_PATH}`);
         this.ready = true;
         this.logger.log('Model loaded successfully');
         return;

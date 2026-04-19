@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import * as tf from '@tensorflow/tfjs';
-import * as sharp from 'sharp';
+import * as tf from '@tensorflow/tfjs-node';
 import { ModelLoaderService } from './model-loader.service';
 import { DetectedObject } from './interfaces/detected-object.interface';
 
@@ -16,15 +15,10 @@ export class ObjectDetectionService {
   async detect(imageBuffer: Buffer, scoreThreshold: number): Promise<DetectedObject[]> {
     const model = this.modelLoader.getModel();
 
-    const { data, info } = await sharp(imageBuffer)
-      .resize(INPUT_SIZE, INPUT_SIZE, { fit: 'fill' })
-      .removeAlpha()
-      .raw()
-      .toBuffer({ resolveWithObject: true });
-
     const inputTensor = tf.tidy(() => {
-      const pixels = tf.tensor3d(new Uint8Array(data), [info.height, info.width, 3]);
-      return pixels.div(255.0).expandDims(0) as tf.Tensor4D;
+      const decoded = tf.node.decodeImage(imageBuffer, 3) as tf.Tensor3D;
+      const resized = tf.image.resizeBilinear(decoded, [INPUT_SIZE, INPUT_SIZE]);
+      return resized.div(255.0).expandDims(0) as tf.Tensor4D;
     });
 
     let rawOutput: tf.Tensor;

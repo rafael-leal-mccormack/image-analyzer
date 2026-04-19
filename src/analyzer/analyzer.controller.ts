@@ -7,7 +7,9 @@ import {
   ServiceUnavailableException,
   HttpCode,
   Logger,
+  UseGuards,
 } from '@nestjs/common';
+import { SecretKeyGuard } from '../common/guards/secret-key.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -20,7 +22,6 @@ import {
   ApiTags,
   ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import { memoryStorage } from 'multer';
 import { AnalyzerService } from './analyzer.service';
 import { ModelLoaderService } from '../ml/model-loader.service';
@@ -30,6 +31,7 @@ import { AppConfig } from '../config/app.config';
 const ALLOWED_MIMETYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 @ApiTags('analyzer')
+@UseGuards(SecretKeyGuard)
 @Controller('analyze')
 export class AnalyzerController {
   private readonly logger = new Logger(AnalyzerController.name);
@@ -46,7 +48,6 @@ export class AnalyzerController {
 
   @Post()
   @HttpCode(200)
-  @Throttle({ default: { ttl: 60_000, limit: 10 } })
   @ApiOperation({ summary: 'Analyze an image for a bag containing a receipt' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -65,7 +66,7 @@ export class AnalyzerController {
   @ApiOkResponse({ type: AnalyzeResponseDto })
   @ApiBadRequestResponse({ description: 'Missing or invalid image file' })
   @ApiServiceUnavailableResponse({ description: 'ML model is still loading' })
-  @ApiTooManyRequestsResponse({ description: 'Rate limit exceeded (10 requests per minute)' })
+  @ApiTooManyRequestsResponse({ description: 'Rate limit exceeded (120 requests per minute per IP)' })
   @UseInterceptors(
     FileInterceptor('image', {
       storage: memoryStorage(),

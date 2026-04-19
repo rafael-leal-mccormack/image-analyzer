@@ -5,6 +5,7 @@ export interface AppConfig {
   maxFileSizeMb: number;
   detectionConfidenceThreshold: number;
   bagConfidenceThreshold: number;
+  secretKey: string | null;
 }
 
 export default registerAs(
@@ -16,7 +17,8 @@ export default registerAs(
       process.env.DETECTION_CONFIDENCE_THRESHOLD ?? '0.5',
     ),
     bagConfidenceThreshold: parseFloat(
-      process.env.BAG_CONFIDENCE_THRESHOLD ?? '0.4',
+      process.env.BAG_CONFIDENCE_THRESHOLD ?? '0.25',
     ),
+    secretKey: process.env.API_SECRET_KEY ?? null,
   }),
 );

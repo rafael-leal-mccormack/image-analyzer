@@ -11,6 +11,15 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
 
+  // Suppress deprecation warnings emitted by TensorFlow native addon internals
+  const TF_DEPRECATION_CODES = new Set(['DEP0051', 'DEP0044']);
+  process.on('warning', (warning) => {
+    if (warning.name === 'DeprecationWarning' && TF_DEPRECATION_CODES.has((warning as NodeJS.ErrnoException).code ?? '')) {
+      return;
+    }
+    console.warn(warning);
+  });
+
   process.on('unhandledRejection', (reason) => {
     logger.error('Unhandled promise rejection', String(reason));
   });

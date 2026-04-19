@@ -39,8 +39,13 @@ export class AnalyzerService {
       receipts.reduce((max, d) => Math.max(max, d.score), 0).toFixed(4),
     );
 
+    const hasBag = bags.length > 0;
+    const hasReceipt = receipts.length > 0;
+
     return {
-      hasBagWithReceipt: bags.length > 0 && receipts.length > 0,
+      hasBag,
+      hasReceipt,
+      hasBagWithReceipt: hasBag && hasReceipt,
       bagScore,
       receiptScore,
       blurScore,
