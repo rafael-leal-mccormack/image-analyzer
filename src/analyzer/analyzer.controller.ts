@@ -104,14 +104,11 @@ export class AnalyzerController {
     }
 
     const start = Date.now();
-    this.logger.log(
-      `Analyzing image: ${file.originalname} (${file.mimetype}, ${(file.size / 1024).toFixed(1)} KB)`,
-    );
-
     const result = await this.analyzerService.analyze(file.buffer);
+    const { hasBag, hasReceipt, bagScore, receiptScore, blurScore } = result;
 
     this.logger.log(
-      `Result: hasBagWithReceipt=${result.hasBagWithReceipt}, bagScore=${result.bagScore}, receiptScore=${result.receiptScore}, blurScore=${result.blurScore}, duration=${Date.now() - start}ms`,
+      `${file.originalname} → bag=${hasBag}(${bagScore}) receipt=${hasReceipt}(${receiptScore}) blur=${blurScore} ${Date.now() - start}ms`,
     );
 
     return result;

@@ -105,7 +105,7 @@ export class ObjectDetectionService {
     }
 
     if (nmsBoxes.length === 0) {
-      [boxesXywh, classScores, topk.values, topk.indices, maxScores, classIndices, ...toDispose].forEach((t) => t.dispose());
+      [working, boxesXywh, classScores, topk.values, topk.indices, maxScores, classIndices, ...toDispose].forEach((t) => t.dispose());
       return [];
     }
 
@@ -138,7 +138,7 @@ export class ObjectDetectionService {
       }
     }
 
-    [boxesXywh, classScores, topk.values, topk.indices, maxScores, classIndices, boxesTensor, scoresTensor, nmsIdx, ...toDispose].forEach((t) => t.dispose());
+    [working, boxesXywh, classScores, topk.values, topk.indices, maxScores, classIndices, boxesTensor, scoresTensor, nmsIdx, ...toDispose].forEach((t) => t.dispose());
 
     return results;
   }

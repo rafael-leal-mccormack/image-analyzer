@@ -92,9 +92,7 @@ export class ImagePreprocessorService {
     const maxStdev = Math.max(...stdevs);
     const score = Math.max(0, 1 - maxStdev / SHARP_STDEV_THRESHOLD);
 
-    this.logger.debug(
-      `Laplacian patch stdevs=[${stdevs.map((s) => s.toFixed(1)).join(', ')}] max=${maxStdev.toFixed(2)}, blurScore=${score.toFixed(4)} (${BLUR_GRID}×${BLUR_GRID} grid on ${BLUR_ANALYSIS_SIZE}px, threshold=${SHARP_STDEV_THRESHOLD})`,
-    );
+    this.logger.debug(`blurScore=${score.toFixed(4)} maxStdev=${maxStdev.toFixed(1)}`);
 
     return parseFloat(score.toFixed(4));
   }
